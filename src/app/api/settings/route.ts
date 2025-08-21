@@ -14,30 +14,40 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { recipientEmail, digestsEnabled, intervalSeconds } = body;
 
-    // Basic backend validation
-    if (typeof digestsEnabled !== 'boolean') {
-      return NextResponse.json({ message: 'Invalid input for digestsEnabled.' }, { status: 400 });
-    }
-    if (typeof intervalSeconds !== 'number' || intervalSeconds < 1) {
-      return NextResponse.json({ message: 'Interval must be a positive number.' }, { status: 400 });
-    }
-    // A simple regex for email validation. Allows for an empty or null string.
-    if (recipientEmail && !/^\S+@\S+\.\S+$/.test(recipientEmail)) {
+    const dataToUpdate: {
+      recipientEmail?: string | null;
+      digestsEnabled?: boolean;
+      intervalSeconds?: number;
+    } = {};
+
+    if (recipientEmail !== undefined) {
+      // A simple regex for email validation. Allows for an empty or null string.
+      if (recipientEmail && !/^\S+@\S+\.\S+$/.test(recipientEmail)) {
         return NextResponse.json({ message: 'Invalid email format.' }, { status: 400 });
+      }
+      dataToUpdate.recipientEmail = recipientEmail;
+    }
+    if (digestsEnabled !== undefined) {
+      if (typeof digestsEnabled !== 'boolean') {
+        return NextResponse.json({ message: 'Invalid input for digestsEnabled.' }, { status: 400 });
+      }
+      dataToUpdate.digestsEnabled = digestsEnabled;
+    }
+    if (intervalSeconds !== undefined) {
+      if (typeof intervalSeconds !== 'number' || intervalSeconds < 1) {
+        return NextResponse.json({ message: 'Interval must be a positive number.' }, { status: 400 });
+      }
+      dataToUpdate.intervalSeconds = intervalSeconds;
     }
 
     const updatedPreference = await prisma.preference.upsert({
       where: { userId },
-      update: {
-        recipientEmail,
-        digestsEnabled,
-        intervalSeconds,
-      },
+      update: dataToUpdate,
       create: {
         userId,
-        recipientEmail: recipientEmail || session.user.email, // Default to user's email on creation
-        digestsEnabled,
-        intervalSeconds,
+        recipientEmail: recipientEmail || session.user.email,
+        digestsEnabled: digestsEnabled ?? true,
+        intervalSeconds: intervalSeconds ?? 1800,
       },
     });
 

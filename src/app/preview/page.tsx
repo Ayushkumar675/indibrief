@@ -2,6 +2,8 @@ import prisma from '@/lib/db';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 
+export const dynamic = 'force-dynamic';
+
 export default async function DigestPreviewScreen() {
   const headlines = await prisma.headline.findMany({
     take: 10,

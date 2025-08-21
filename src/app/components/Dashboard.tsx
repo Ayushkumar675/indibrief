@@ -49,9 +49,6 @@ export default function Dashboard({ user, hasHeadlines }: DashboardProps) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           digestsEnabled: !digestsEnabled,
-          // Pass existing values for other settings to avoid overwriting them
-          recipientEmail: preference?.recipientEmail || null,
-          intervalSeconds: preference?.intervalSeconds || 1800,
         }),
        });
       const data = await response.json();
