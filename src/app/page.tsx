@@ -3,6 +3,8 @@ import prisma from "@/lib/db"
 import Dashboard from "@/app/components/Dashboard"
 import { LogIn } from "lucide-react"
 
+export const dynamic = 'force-dynamic';
+
 export default async function Home() {
   const session = await auth()
 
