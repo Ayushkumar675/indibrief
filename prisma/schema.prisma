@@ -57,10 +57,14 @@ model VerificationToken {
 }
 
 model Preference {
+  id               String    @id @default(cuid())
+  digestsEnabled   Boolean   @default(true)
+  recipientEmail   String?
+  intervalSeconds  Int       @default(1800) // Default to 30 minutes
+  lastDigestSentAt DateTime?
   id              String  @id @default(cuid())
   digestsEnabled  Boolean @default(true)
   recipientEmail  String?
-
   userId String @unique
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
