@@ -2,19 +2,11 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { Mail, FileText, PlayCircle, Settings, Loader2 } from 'lucide-react';
+import { Mail, FileText, Settings, Loader2 } from 'lucide-react';
 import type { User, Preference } from '@prisma/client';
 import SettingsSheet from './SettingsSheet';
-import { formatDistanceToNow } from 'date-fns';
-
-function formatInterval(seconds: number): string {
-  if (seconds < 60) return `${seconds} second${seconds !== 1 ? 's' : ''}`;
-  const minutes = Math.round(seconds / 60);
-  return `${minutes} minute${minutes !== 1 ? 's' : ''}`;
-}
 
 interface DashboardProps {
-  // This custom type combines the User and their related Preference
   user: User & { preference: Preference | null };
   hasHeadlines: boolean;
 }
@@ -22,12 +14,8 @@ interface DashboardProps {
 export default function Dashboard({ user, hasHeadlines }: DashboardProps) {
   const [preference, setPreference] = useState(user.preference);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState({ testEmail: false, toggleDigests: false });
+  const [isLoading, setIsLoading] = useState({ testEmail: false });
   const [alert, setAlert] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
-
-  // The digest enabled status is now derived from the preference state
-  const digestsEnabled = preference?.digestsEnabled ?? true;
-  const intervalInSeconds = preference?.intervalSeconds ?? 1800; // Default to 30 mins
 
   const handleSendTest = async () => {
     setIsLoading(prev => ({ ...prev, testEmail: true }));
@@ -47,56 +35,10 @@ export default function Dashboard({ user, hasHeadlines }: DashboardProps) {
     setIsLoading(prev => ({ ...prev, testEmail: false }));
   };
 
-  const handleToggleDigests = async () => {
-    setIsLoading(prev => ({ ...prev, toggleDigests: true }));
-    setAlert(null);
-    try {
-      // We use the main settings endpoint to toggle this boolean
-      const response = await fetch('/api/settings', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          digestsEnabled: !digestsEnabled,
-          // Also send other settings to avoid them being reset to default
-          // in case a preference record doesn't exist yet.
-          recipientEmail: preference?.recipientEmail || user.email,
-          intervalSeconds: preference?.intervalSeconds || 1800,
-        }),
-       });
-      const data = await response.json();
-      if (response.ok) {
-        setPreference(data);
-        setAlert({ type: 'success', message: `Digests have been ${data.digestsEnabled ? 'enabled' : 'disabled'}.` });
-      } else {
-        setAlert({ type: 'error', message: data.message || 'Failed to update digest status.' });
-      }
-    } catch (error) {
-      console.error("Failed to toggle digests:", error);
-      setAlert({ type: 'error', message: 'An unexpected error occurred.' });
-    }
-    setIsLoading(prev => ({ ...prev, toggleDigests: false }));
-  };
-
   const handleSaveSettings = (newPreference: Preference) => {
     setPreference(newPreference);
     setAlert({ type: 'success', message: 'Settings saved successfully!' });
   };
-
-  const nextSendEta = (() => {
-    if (!preference || !preference.lastDigestSentAt) {
-      return "on the next cron run";
-    }
-    const lastSentDate = new Date(preference.lastDigestSentAt);
-    const nextSendDate = new Date(lastSentDate.getTime() + intervalInSeconds * 1000);
-    const now = new Date();
-
-    if (nextSendDate < now) {
-      return "any moment now";
-    }
-
-    return `in ${formatDistanceToNow(nextSendDate, { addSuffix: false })}`;
-  })();
-
 
   return (
     <>
@@ -110,21 +52,9 @@ export default function Dashboard({ user, hasHeadlines }: DashboardProps) {
         <header className="text-center mb-8">
           <h1 className="text-4xl font-bold tracking-tight">IndiBrief</h1>
           <p className="text-gray-400 mt-2">
-            Top 10 India Today headlines—plus key takeaways—delivered to your inbox every {formatInterval(intervalInSeconds)}.
+            Get the latest headlines from India Today, on demand.
           </p>
         </header>
-
-        <div className="bg-gray-800 rounded-lg p-6 mb-8 text-center">
-          <div className="flex justify-center items-center gap-4 mb-4">
-            <div className={`w-3 h-3 rounded-full ${digestsEnabled ? 'bg-green-500' : 'bg-red-500'}`}></div>
-            <p className="text-lg">
-              Digests are <strong>{digestsEnabled ? 'On' : 'Off'}</strong>
-            </p>
-          </div>
-          <p className="text-gray-400">
-            Next digest will be sent {nextSendEta}.
-          </p>
-        </div>
 
         {alert && (
           <div
@@ -136,15 +66,6 @@ export default function Dashboard({ user, hasHeadlines }: DashboardProps) {
         )}
 
         <div className="flex flex-col gap-4">
-          <button
-            onClick={handleToggleDigests}
-            disabled={isLoading.toggleDigests}
-            className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-50 disabled:opacity-50"
-          >
-            {isLoading.toggleDigests ? <Loader2 className="animate-spin" size={20} /> : <PlayCircle size={20} />}
-            <span>{digestsEnabled ? `Pause ${formatInterval(intervalInSeconds)} Digests` : `Resume ${formatInterval(intervalInSeconds)} Digests`}</span>
-          </button>
-
           <div className="grid grid-cols-2 gap-4">
             <button
               onClick={handleSendTest}

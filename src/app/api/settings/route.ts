@@ -12,42 +12,19 @@ export async function POST(request: Request) {
 
   try {
     const body = await request.json();
-    const { recipientEmail, digestsEnabled, intervalSeconds } = body;
+    const { recipientEmail } = body;
 
-    const dataToUpdate: {
-      recipientEmail?: string | null;
-      digestsEnabled?: boolean;
-      intervalSeconds?: number;
-    } = {};
-
-    if (recipientEmail !== undefined) {
-      // A simple regex for email validation. Allows for an empty or null string.
-      if (recipientEmail && !/^\S+@\S+\.\S+$/.test(recipientEmail)) {
-        return NextResponse.json({ message: 'Invalid email format.' }, { status: 400 });
-      }
-      dataToUpdate.recipientEmail = recipientEmail;
-    }
-    if (digestsEnabled !== undefined) {
-      if (typeof digestsEnabled !== 'boolean') {
-        return NextResponse.json({ message: 'Invalid input for digestsEnabled.' }, { status: 400 });
-      }
-      dataToUpdate.digestsEnabled = digestsEnabled;
-    }
-    if (intervalSeconds !== undefined) {
-      if (typeof intervalSeconds !== 'number' || intervalSeconds < 1) {
-        return NextResponse.json({ message: 'Interval must be a positive number.' }, { status: 400 });
-      }
-      dataToUpdate.intervalSeconds = intervalSeconds;
+    // A simple regex for email validation. Allows for an empty or null string.
+    if (recipientEmail && !/^\S+@\S+\.\S+$/.test(recipientEmail)) {
+      return NextResponse.json({ message: 'Invalid email format.' }, { status: 400 });
     }
 
     const updatedPreference = await prisma.preference.upsert({
       where: { userId },
-      update: dataToUpdate,
+      update: { recipientEmail: recipientEmail || null },
       create: {
         userId,
         recipientEmail: recipientEmail || session.user.email,
-        digestsEnabled: digestsEnabled ?? true,
-        intervalSeconds: intervalSeconds ?? 1800,
       },
     });
 
