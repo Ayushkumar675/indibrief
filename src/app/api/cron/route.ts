@@ -6,11 +6,39 @@ import { sendEmail } from '@/lib/email';
 export const dynamic = 'force-dynamic';
 
 // This cron job is designed to be run frequently (e.g., every minute).
-// It will check which users are due for a digest and send it.
 export async function GET() {
-  console.log("Cron job started: checking for users due for a digest.");
+  console.log("Cron job started.");
 
   try {
+    // Step 1: Always fetch and save new headlines.
+    const headlines = await fetchHeadlines();
+    let newHeadlinesCount = 0;
+    if (headlines.length > 0) {
+      // Use a loop with try/catch to gracefully handle unique constraint violations,
+      // as `skipDuplicates` is not supported on SQLite.
+      for (const headline of headlines) {
+        try {
+          await prisma.headline.create({
+            data: {
+              title: headline.title,
+              url: headline.url,
+            },
+          });
+          newHeadlinesCount++;
+        } catch (error) {
+          // @ts-expect-error - Prisma's error type includes a 'code' property.
+          if (error.code !== 'P2002') {
+            // Log any error that is not a unique constraint violation
+            console.error(`Failed to create headline "${headline.title}":`, error);
+          }
+        }
+      }
+      console.log(`Saved ${newHeadlinesCount} new headlines.`);
+    } else {
+      console.log("No new headlines found on the site.");
+    }
+
+    // Step 2: Check for users who are due for a digest.
     const usersWithPrefs = await prisma.user.findMany({
       where: {
         preference: {
@@ -23,22 +51,28 @@ export async function GET() {
     });
 
     if (usersWithPrefs.length === 0) {
-      console.log("Cron job finished: No users are subscribed to digests.");
-      return NextResponse.json({ ok: true, message: 'No users subscribed to digests.' });
+      const message = `Saved ${newHeadlinesCount} headlines. No users are subscribed to digests.`;
+      console.log(`Cron job finished: ${message}`);
+      return NextResponse.json({ ok: true, message });
     }
 
-    // Fetch headlines once for all users due in this run
-    const headlines = await fetchHeadlines();
-    if (headlines.length === 0) {
-      console.log("Cron job finished: No new headlines found on the site.");
-      return NextResponse.json({ ok: true, message: 'No new headlines found on the site.' });
+    // If we are here, there are subscribed users. Let's get the latest headlines for them.
+    const latestHeadlines = await prisma.headline.findMany({
+      take: 10,
+      orderBy: { createdAt: 'desc' },
+    });
+
+    if (latestHeadlines.length === 0) {
+      const message = `Saved ${newHeadlinesCount} headlines, but no headlines are available in DB to send.`;
+      console.log(`Cron job finished: ${message}`);
+      return NextResponse.json({ ok: true, message });
     }
 
     const htmlBody = `
       <h1>Your IndiBrief Digest</h1>
       <p>Here are the latest headlines:</p>
       <ul>
-        ${headlines.map(h => `<li><a href="${h.url}" target="_blank" rel="noopener noreferrer">${h.title}</a></li>`).join('')}
+        ${latestHeadlines.map(h => `<li><a href="${h.url}" target="_blank" rel="noopener noreferrer">${h.title}</a></li>`).join('')}
       </ul>
     `;
 
@@ -46,35 +80,25 @@ export async function GET() {
     const now = new Date();
 
     for (const user of usersWithPrefs) {
-      // The preference object will exist due to the where clause, but we check to satisfy TypeScript
       if (user.preference) {
         const { lastDigestSentAt, intervalSeconds, recipientEmail } = user.preference;
         const recipient = recipientEmail || user.email;
 
-        // Check if it's time to send the digest
         const shouldSend = !lastDigestSentAt || (now.getTime() > lastDigestSentAt.getTime() + intervalSeconds * 1000);
 
         if (shouldSend && recipient) {
           console.log(`Sending digest to ${recipient} for user ${user.id}`);
-
-          await sendEmail({
-            to: recipient,
-            subject: 'Your IndiBrief Digest',
-            html: htmlBody,
-          });
-
-          // Update the last sent timestamp
+          await sendEmail({ to: recipient, subject: 'Your IndiBrief Digest', html: htmlBody });
           await prisma.preference.update({
             where: { id: user.preference.id },
             data: { lastDigestSentAt: now },
           });
-
           emailsSent++;
         }
       }
     }
 
-    const message = `Checked ${usersWithPrefs.length} subscribed users, sent ${emailsSent} digests.`;
+    const message = `Saved ${newHeadlinesCount} new headlines. Checked ${usersWithPrefs.length} subscribed users, sent ${emailsSent} digests.`;
     console.log(`Cron job finished: ${message}`);
     return NextResponse.json({ ok: true, message });
 
