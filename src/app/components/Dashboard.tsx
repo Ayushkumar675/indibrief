@@ -1,15 +1,17 @@
 "use client";
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { Mail, FileText, PlayCircle, Settings, Loader2 } from 'lucide-react';
 import type { User, Preference } from '@prisma/client';
 
 interface DashboardProps {
   // This custom type combines the User and their related Preference
   user: User & { preference: Preference | null };
+  hasHeadlines: boolean;
 }
 
-export default function Dashboard({ user }: DashboardProps) {
+export default function Dashboard({ user, hasHeadlines }: DashboardProps) {
   const [digestsEnabled, setDigestsEnabled] = useState(user.preference?.digestsEnabled ?? true);
   const [isLoading, setIsLoading] = useState({ testEmail: false, toggleDigests: false });
   const [alert, setAlert] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
@@ -96,17 +98,27 @@ export default function Dashboard({ user }: DashboardProps) {
         <div className="grid grid-cols-2 gap-4">
           <button
             onClick={handleSendTest}
-            disabled={isLoading.testEmail}
-            className="w-full bg-gray-700 hover:bg-gray-600 text-white font-bold py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-50 disabled:opacity-50"
+            disabled={isLoading.testEmail || !hasHeadlines}
+            className="w-full bg-gray-700 hover:bg-gray-600 text-white font-bold py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-50 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isLoading.testEmail ? <Loader2 className="animate-spin" size={20} /> : <Mail size={20} />}
             <span>Send Test Email</span>
           </button>
-          <button className="w-full bg-gray-700 hover:bg-gray-600 text-white font-bold py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-50">
+          <Link
+            href={hasHeadlines ? "/preview" : "#"}
+            aria-disabled={!hasHeadlines}
+            onClick={(e) => !hasHeadlines && e.preventDefault()}
+            className={`w-full bg-gray-700 hover:bg-gray-600 text-white font-bold py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-50 ${!hasHeadlines ? 'opacity-50 cursor-not-allowed' : ''}`}
+          >
             <FileText size={20} />
             <span>Preview Latest</span>
-          </button>
+          </Link>
         </div>
+        {!hasHeadlines && (
+          <p className="text-center text-sm text-gray-500 mt-4">
+            You must run the cron job at least once to fetch headlines before you can send a test or preview a digest.
+          </p>
+        )}
       </div>
 
       <footer className="text-center mt-12">

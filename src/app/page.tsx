@@ -25,9 +25,11 @@ export default async function Home() {
     return <SignInScreen message="Could not find user data. Please sign in again." />
   }
 
+  const headlineCount = await prisma.headline.count();
+
   return (
     <main className="flex min-h-screen flex-col items-center justify-center p-4 relative">
-      <Dashboard user={userWithPreference} />
+      <Dashboard user={userWithPreference} hasHeadlines={headlineCount > 0} />
       <SignOutButton />
     </main>
   )
