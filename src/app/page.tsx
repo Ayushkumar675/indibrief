@@ -11,7 +11,6 @@ export default async function Home() {
   }
 
   // Fetch the user and their preference in one go.
-  // This is more efficient than fetching the session and then the user.
   const userWithPreference = await prisma.user.findUnique({
     where: { id: session.user.id },
     include: {

@@ -8,8 +8,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(prisma),
   session: { strategy: "jwt" }, // JWT session strategy is recommended with the Prisma adapter
   callbacks: {
-    // The session callback from the original config is not needed here
-    // as we will extend the JWT token instead.
     async jwt({ token, user }) {
       if (user && user.id) {
         token.id = user.id;

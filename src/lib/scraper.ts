@@ -20,7 +20,6 @@ export const fetchHeadlines = async (): Promise<Headline[]> => {
     const addedUrls = new Set<string>();
 
     // Strategy 1: Find a container with "LATEST STORIES" and get links from there.
-    // I'm assuming this text exists within a heading, and I'll grab the parent container.
     const latestStoriesContainer = $('h4:contains("LATEST STORIES"), h2:contains("LATEST STORIES")').first().parent();
 
     if (latestStoriesContainer.length > 0) {
@@ -55,9 +54,6 @@ export const fetchHeadlines = async (): Promise<Headline[]> => {
             }
         });
     }
-
-    // For now, I will not attempt to get summary and key points.
-    // The primary goal is to reliably get the top 10 headlines.
 
     return Array.from(headlines).slice(0, 10);
   } catch (error) {
