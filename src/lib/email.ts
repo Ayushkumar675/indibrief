@@ -1,5 +1,3 @@
-// src/lib/email.ts
-
 interface EmailOptions {
   to: string;
   subject: string;
@@ -8,16 +6,23 @@ interface EmailOptions {
 
 /**
  * Sends an email.
- * In a real application, this would use an email provider like
- * Resend, SendGrid, or Nodemailer.
+ * This is a MOCK email service for development. In a real application, this
+ * would be replaced with a proper email provider like Resend, SendGrid, or Nodemailer.
  */
 export const sendEmail = async (options: EmailOptions) => {
-  // Placeholder implementation
-  console.log('Sending email...');
-  console.log(`  To: ${options.to}`);
-  console.log(`  Subject: ${options.subject}`);
-  console.log(`  Body: ${options.html.substring(0, 100)}...`);
+  console.log('====================================');
+  console.log('  📧 MOCK EMAIL SERVICE: SENDING EMAIL');
+  console.log('====================================');
+  console.log(`  TO: ${options.to}`);
+  console.log(`  SUBJECT: ${options.subject}`);
+  console.log('------------------------------------');
+  console.log('  BODY (HTML):');
+  console.log(options.html);
+  console.log('====================================');
+  console.log('  ✅ EMAIL SENT SUCCESSFULLY (MOCKED)');
+  console.log('====================================');
 
-  // For now, simulate a successful email send
-  return { success: true };
+  // In a real service, you would get a response from the provider's API.
+  // For this mock, we'll just simulate a success response.
+  return { success: true, messageId: `mock_${Date.now()}` };
 };
