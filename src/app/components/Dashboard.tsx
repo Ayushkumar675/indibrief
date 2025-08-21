@@ -5,6 +5,13 @@ import Link from 'next/link';
 import { Mail, FileText, PlayCircle, Settings, Loader2 } from 'lucide-react';
 import type { User, Preference } from '@prisma/client';
 import SettingsSheet from './SettingsSheet';
+import { formatDistanceToNow } from 'date-fns';
+
+function formatInterval(seconds: number): string {
+  if (seconds < 60) return `${seconds} second${seconds !== 1 ? 's' : ''}`;
+  const minutes = Math.round(seconds / 60);
+  return `${minutes} minute${minutes !== 1 ? 's' : ''}`;
+}
 
 interface DashboardProps {
   // This custom type combines the User and their related Preference
@@ -20,6 +27,7 @@ export default function Dashboard({ user, hasHeadlines }: DashboardProps) {
 
   // The digest enabled status is now derived from the preference state
   const digestsEnabled = preference?.digestsEnabled ?? true;
+  const intervalInSeconds = preference?.intervalSeconds ?? 1800; // Default to 30 mins
 
   const handleSendTest = async () => {
     setIsLoading(prev => ({ ...prev, testEmail: true }));
@@ -49,6 +57,10 @@ export default function Dashboard({ user, hasHeadlines }: DashboardProps) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           digestsEnabled: !digestsEnabled,
+          // Also send other settings to avoid them being reset to default
+          // in case a preference record doesn't exist yet.
+          recipientEmail: preference?.recipientEmail || user.email,
+          intervalSeconds: preference?.intervalSeconds || 1800,
         }),
        });
       const data = await response.json();
@@ -70,7 +82,21 @@ export default function Dashboard({ user, hasHeadlines }: DashboardProps) {
     setAlert({ type: 'success', message: 'Settings saved successfully!' });
   };
 
-  const nextSendEta = "in 28 minutes"; // This is still a placeholder
+  const nextSendEta = (() => {
+    if (!preference || !preference.lastDigestSentAt) {
+      return "on the next cron run";
+    }
+    const lastSentDate = new Date(preference.lastDigestSentAt);
+    const nextSendDate = new Date(lastSentDate.getTime() + intervalInSeconds * 1000);
+    const now = new Date();
+
+    if (nextSendDate < now) {
+      return "any moment now";
+    }
+
+    return `in ${formatDistanceToNow(nextSendDate, { addSuffix: false })}`;
+  })();
+
 
   return (
     <>
@@ -84,7 +110,7 @@ export default function Dashboard({ user, hasHeadlines }: DashboardProps) {
         <header className="text-center mb-8">
           <h1 className="text-4xl font-bold tracking-tight">IndiBrief</h1>
           <p className="text-gray-400 mt-2">
-            Top 10 India Today headlines—plus key takeaways—delivered to your inbox every 30 minutes.
+            Top 10 India Today headlines—plus key takeaways—delivered to your inbox every {formatInterval(intervalInSeconds)}.
           </p>
         </header>
 
@@ -116,7 +142,7 @@ export default function Dashboard({ user, hasHeadlines }: DashboardProps) {
             className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-50 disabled:opacity-50"
           >
             {isLoading.toggleDigests ? <Loader2 className="animate-spin" size={20} /> : <PlayCircle size={20} />}
-            <span>{digestsEnabled ? 'Pause 30-min Digests' : 'Resume 30-min Digests'}</span>
+            <span>{digestsEnabled ? `Pause ${formatInterval(intervalInSeconds)} Digests` : `Resume ${formatInterval(intervalInSeconds)} Digests`}</span>
           </button>
 
           <div className="grid grid-cols-2 gap-4">
