@@ -2,6 +2,8 @@ import type { NextAuthConfig } from 'next-auth';
 import EmailProvider from 'next-auth/providers/email';
 
 export const authConfig = {
+  // In a real app, you'd want to use a secret generated with `openssl rand -base64 32`
+  secret: process.env.AUTH_SECRET,
   providers: [
     EmailProvider({
       server: {
