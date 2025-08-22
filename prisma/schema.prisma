@@ -60,5 +60,6 @@ model Headline {
   id        String   @id @default(cuid())
   title     String   @unique
   url       String   @unique
+  summary   String?
   createdAt DateTime @default(now())
 }
