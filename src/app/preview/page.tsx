@@ -32,10 +32,10 @@ export default async function DigestPreviewScreen() {
             {headlines.map((headline, index) => (
               <article key={headline.id} className="bg-white rounded-2xl shadow-lg p-6 transition-transform duration-300 hover:scale-[1.02] animate-fade-in-up" style={{ animationDelay: `${index * 100}ms`}}>
                 <h2 className="text-2xl font-bold mb-3">
-                  news headline: {headline.title}
+                  {headline.title}
                 </h2>
                 <p className="text-gray-600 mb-4">
-                  <strong>summary:</strong> {headline.summary || 'Summary not available.'}
+                  {headline.summary || 'Summary not available.'}
                 </p>
                 <a
                   href={headline.url}
@@ -43,7 +43,7 @@ export default async function DigestPreviewScreen() {
                   rel="noopener noreferrer"
                   className="text-blue-600 hover:text-blue-800 font-semibold transition-colors inline-flex items-center gap-2 group"
                 >
-                  <span>link: Read Full Article</span>
+                  <span>Read Full Article</span>
                   <span className="transition-transform duration-300 group-hover:translate-x-1">&rarr;</span>
                 </a>
               </article>
