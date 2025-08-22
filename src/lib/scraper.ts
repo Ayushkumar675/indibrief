@@ -3,8 +3,7 @@ import * as cheerio from 'cheerio';
 export interface Headline {
   title: string;
   url: string;
-  summary?: string;
-  keyPoints?: string[];
+  content?: string;
 }
 
 export const fetchHeadlines = async (): Promise<Headline[]> => {
@@ -16,7 +15,7 @@ export const fetchHeadlines = async (): Promise<Headline[]> => {
     const html = await response.text();
     const $ = cheerio.load(html);
 
-    const headlines: Headline[] = [];
+    const headlines: { title: string, url: string }[] = [];
     const addedUrls = new Set<string>();
 
     // Strategy 1: Find a container with "LATEST STORIES" and get links from there.
@@ -55,7 +54,26 @@ export const fetchHeadlines = async (): Promise<Headline[]> => {
         });
     }
 
-    return Array.from(headlines).slice(0, 10);
+    const headlinesWithContent = await Promise.all(
+      headlines.slice(0, 10).map(async (headline) => {
+        try {
+          const articleResponse = await fetch(headline.url);
+          if (!articleResponse.ok) {
+            return { ...headline, content: '' };
+          }
+          const articleHtml = await articleResponse.text();
+          const $article = cheerio.load(articleHtml);
+          // A common selector for article bodies. This might need adjustment.
+          const content = $article('.description').text().trim();
+          return { ...headline, content };
+        } catch (error) {
+          console.error(`Failed to fetch content for ${headline.url}:`, error);
+          return { ...headline, content: '' };
+        }
+      })
+    );
+
+    return headlinesWithContent;
   } catch (error) {
     console.error('Error scraping headlines:', error);
     return [];

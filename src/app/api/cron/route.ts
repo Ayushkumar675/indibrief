@@ -1,12 +1,13 @@
 import { NextResponse } from 'next/server';
 import { fetchHeadlines } from '@/lib/scraper';
+import { summarizeArticle } from '@/lib/gemini';
 import prisma from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
 
-// This cron job now only fetches new headlines from the source.
+// This cron job fetches new headlines, summarizes them, and saves them.
 export async function GET() {
-  console.log("Cron job started: fetching new headlines.");
+  console.log("Cron job started: fetching and summarizing new headlines.");
 
   try {
     const headlines = await fetchHeadlines();
@@ -15,10 +16,14 @@ export async function GET() {
     if (headlines.length > 0) {
       for (const headline of headlines) {
         try {
+          // Get the summary from Gemini
+          const summary = await summarizeArticle(headline.content || "");
+
           await prisma.headline.create({
             data: {
               title: headline.title,
               url: headline.url,
+              summary: summary,
             },
           });
           newHeadlinesCount++;
@@ -29,7 +34,7 @@ export async function GET() {
           }
         }
       }
-      const message = `Cron job finished: Saved ${newHeadlinesCount} new headlines.`;
+      const message = `Cron job finished: Saved and summarized ${newHeadlinesCount} new headlines.`;
       console.log(message);
       return NextResponse.json({ ok: true, message });
     } else {
