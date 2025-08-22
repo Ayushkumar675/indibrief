@@ -25,7 +25,7 @@ export async function POST() {
     }
 
     const htmlBody = `
-      <h1>Your IndiBrief Test Digest</h1>
+      <h1>IndiBrief — Get Latest News EveryDay</h1>
       <p>Here are the latest headlines:</p>
       <ul>
         ${headlines.map(h => `<li><a href="${h.url}" target="_blank" rel="noopener noreferrer">${h.title}</a></li>`).join('')}
@@ -35,7 +35,7 @@ export async function POST() {
 
     await sendEmail({
       to: session.user.email,
-      subject: 'Your IndiBrief Test Digest',
+      subject: 'IndiBrief — Get Latest News EveryDay',
       html: htmlBody,
     });
 
