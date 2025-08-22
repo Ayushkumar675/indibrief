@@ -31,9 +31,9 @@ export async function POST() {
         <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
         ${headlines.map(h => `
           <div style="margin-bottom: 20px;">
-            <h2 style="font-size: 18px; margin-bottom: 5px;">news headline: ${h.title}</h2>
-            <p style="font-size: 14px; color: #555; line-height: 1.6;"><strong>summary:</strong> ${h.summary || 'Summary not available.'}</p>
-            <a href="${h.url}" target="_blank" rel="noopener noreferrer" style="font-size: 14px; color: #1a73e8; text-decoration: none;">link: Read full article &rarr;</a>
+            <h2 style="font-size: 18px; margin-bottom: 5px;">${h.title}</h2>
+            <p style="font-size: 14px; color: #555; line-height: 1.6;">${h.summary || 'Summary not available.'}</p>
+            <a href="${h.url}" target="_blank" rel="noopener noreferrer" style="font-size: 14px; color: #1a73e8; text-decoration: none;">Read full article &rarr;</a>
           </div>
         `).join('<hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">')}
         <p style="text-align: center; font-size: 12px; color: #999; margin-top: 20px;">
