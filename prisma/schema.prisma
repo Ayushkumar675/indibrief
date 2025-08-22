@@ -45,7 +45,6 @@ model User {
   image         String?
   accounts      Account[]
   sessions      Session[]
-  preference    Preference?
 }
 
 model VerificationToken {
@@ -56,13 +55,6 @@ model VerificationToken {
   @@unique([identifier, token])
 }
 
-model Preference {
-  id             String  @id @default(cuid())
-  recipientEmail String?
-
-  userId String @unique
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-}
 
 model Headline {
   id        String   @id @default(cuid())
