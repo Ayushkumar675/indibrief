@@ -43,11 +43,11 @@ function SignInScreen({ message }: { message?: string }) {
         <form
           action={async () => {
             "use server"
-            await signIn("email", { email: "test@example.com", redirect: false })
+            await signIn("email", { email: "coolayush4015@gmail.com", redirect: false })
           }}
         >
           <p className="text-sm text-gray-500 mb-4">
-            Clicking below will sign you in with the email &quot;test@example.com&quot; and send a magic link to your console.
+            Clicking below will send a magic link to coolayush4015@gmail.com to sign you in.
           </p>
           <button
             type="submit"
