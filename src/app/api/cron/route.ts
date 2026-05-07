@@ -14,19 +14,36 @@ export async function GET() {
     let newHeadlinesCount = 0;
 
     if (headlines.length > 0) {
-      for (const headline of headlines) {
+      for (let i = 0; i < headlines.length; i++) {
+        const headline = headlines[i];
         try {
+          // Check if headline already exists to save API quota
+          const existingHeadline = await prisma.headline.findUnique({
+            where: { url: headline.url },
+          });
+
+          if (existingHeadline && existingHeadline.summary && existingHeadline.summary.trim() !== "") {
+            continue;
+          }
+
           // Get the summary from Gemini
           const summary = await summarizeArticle(headline.content || "");
 
-          await prisma.headline.create({
-            data: {
+          await prisma.headline.upsert({
+            where: { url: headline.url },
+            update: { summary: summary },
+            create: {
               title: headline.title,
               url: headline.url,
               summary: summary,
             },
           });
           newHeadlinesCount++;
+          
+          // Wait 15 seconds to respect Gemini API rate limits (5 requests / min)
+          if (i < headlines.length - 1) {
+            await new Promise(resolve => setTimeout(resolve, 15000));
+          }
         } catch (error) {
           // @ts-expect-error - Prisma's error type includes a 'code' property.
           if (error.code !== 'P2002') {

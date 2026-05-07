@@ -9,6 +9,28 @@ IndiBrief is a Next.js application that fetches the latest news headlines from I
 -   **Web Preview**: Preview the latest headlines and their summaries directly in the browser.
 -   **Modern UI**: A clean, modern, and animated user interface built with Tailwind CSS.
 
+## Architecture
+
+IndiBrief is built using a modern full-stack web architecture leveraging Next.js and various other tools to create a seamless experience.
+
+### Core Technologies
+
+-   **Framework**: Next.js 15 (App Router)
+-   **Styling**: Tailwind CSS
+-   **Database**: SQLite (can be migrated to PostgreSQL/MySQL easily)
+-   **ORM**: Prisma
+-   **Authentication**: NextAuth.js (Auth.js) v5
+-   **AI Integration**: Google Generative AI (Gemini API)
+
+### Key Components
+
+-   **Web Scraper (`src/lib/scraper.ts`)**: Utilizes Cheerio to extract the latest news headlines and article content from India Today.
+-   **AI Summarization Engine (`src/lib/gemini.ts`)**: Connects to the Google Gemini API to process the raw article content and generate concise summaries.
+-   **Scheduled Cron Job (`src/app/api/cron/route.ts`)**: An API route designed to be triggered periodically. It orchestrates the workflow of scraping new articles, checking if they exist in the database, requesting summaries from Gemini (with built-in rate-limiting delays), and storing the results.
+-   **Authentication System (`src/lib/auth.ts`)**: Implements passwordless email sign-in (Magic Links) using NextAuth and Prisma Adapter, securing user sessions.
+-   **Email Dispatcher (`src/lib/email.ts`)**: Uses Nodemailer to compile the latest summarized headlines and send them directly to the user's authenticated email address on demand.
+-   **Database Models (`prisma/schema.prisma`)**: Stores user accounts, sessions, and scraped `Headline` data (including title, URL, and AI summary).
+
 ## Getting Started
 
 Follow these steps to set up and run the project locally.

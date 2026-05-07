@@ -15,7 +15,7 @@ export async function summarizeArticle(articleContent: string): Promise<string> 
   }
 
   try {
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
     const prompt = `Summarize the following news article in 5 lines:\n\n${articleContent}`;
 
